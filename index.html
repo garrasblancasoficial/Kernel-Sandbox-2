@@ -2,24 +2,23 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <title>NEXUS: VOXEL.SYS v9.0 - OMNI ARCHITECT (SAUL)</title>
+    <title>NEXUS: VOXEL.SYS v12.0 - UNLIMITED POWER (MIKE)</title>
     <style>
         body { margin: 0; overflow: hidden; background: #000; font-family: 'Courier New', monospace; color: #0f0; }
-        #ui { position: absolute; top: 10px; left: 10px; background: rgba(0,10,0,0.95); padding: 10px; border: 1px solid #0f0; width: 380px; max-height: 95vh; overflow-y: auto; z-index: 100; font-size: 10px; scrollbar-width: thin; }
-        .category { margin-bottom: 8px; border-left: 2px solid #0f0; padding-left: 5px; background: rgba(0,30,0,0.2); }
-        .cat-name { font-weight: bold; color: #fff; display: block; padding: 2px; text-transform: uppercase; border-bottom: 1px solid #050; }
-        .grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 2px; padding: 3px; }
-        button { background: #010; color: #0f0; border: 1px solid #040; padding: 4px; cursor: pointer; font-size: 8px; text-align: left; text-overflow: ellipsis; overflow: hidden; }
-        button:hover { background: #0f0; color: #000; }
-        .active { background: #0f0 !important; color: #000 !important; }
-        #monitor { margin-top: 10px; border: 1px solid #0f0; padding: 5px; background: #000; height: 60px; font-size: 9px; color: #0f0; overflow: hidden; }
+        #ui { position: absolute; top: 10px; left: 10px; background: rgba(0,20,0,0.9); padding: 15px; border: 2px solid #0f0; width: 400px; max-height: 90vh; overflow-y: auto; z-index: 100; box-shadow: 0 0 20px #0f0; }
+        .category { margin-bottom: 10px; border: 1px solid #0f0; padding: 10px; }
+        .cat-name { font-weight: bold; color: #fff; display: block; text-align: center; background: #030; margin-bottom: 10px; }
+        .grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 5px; }
+        button { background: #000; color: #0f0; border: 1px solid #0f0; padding: 8px; cursor: pointer; font-size: 10px; transition: 0.2s; }
+        button:hover { background: #0f0; color: #000; box-shadow: 0 0 10px #0f0; }
+        #monitor { margin-top: 15px; border-top: 2px solid #0f0; padding-top: 10px; height: 100px; font-size: 11px; overflow: hidden; }
     </style>
 </head>
 <body>
 
 <div id="ui">
-    <div style="text-align:center; font-size: 14px; border-bottom: 2px solid #0f0; margin-bottom: 8px;">NEXUS_OS // ARCHITECT: SAUL</div>
-    <div id="monitor">SISTEMA: Standby<br>USUARIO: SAUL_ROOT</div>
+    <div style="text-align:center; font-size: 18px; font-weight: bold; text-shadow: 0 0 10px #0f0;">NEXUS_ULTRA_CORE // MIKE</div>
+    <div id="monitor">KERNEL: UNLOCKED<br>GPU_ACCELERATION: MAX</div>
     <div id="menu"></div>
 </div>
 
@@ -30,117 +29,96 @@
 <script type="module">
 import * as THREE from 'three';
 
-// --- DATABASE MAESTRA (TODO LO MENCIONADO) ---
-const DB = {
-    'LAND': { 'SAND': 0xd2b48c, 'DIRT': 0x553311, 'ROCK': 0x777777, 'CLAY': 0xa52a2a, 'GRAVEL': 0x696969, 'SNOW': 0xffffff },
-    'LIQUIDS': { 'WATER': 0x00aaff, 'ACID': 0x00ff00, 'LAVA': 0xff4400, 'OIL': 0x111111, 'MERCURY': 0xaaaaaa, 'HONEY': 0xffaa00 },
-    'LIFE': { 'HUMAN': 0xffffff, 'ANT': 0xff0000, 'TREE': 0x5d4037, 'GRASS': 0x228822, 'VIRUS': 0xff00ff, 'CANCER': 0x880000 },
-    'ENERGY': { 'FIRE': 0xff8800, 'LIGHTNING': 0x00ffff, 'RAD': 0xccff00, 'GOD_RAY': 0xffffaa, 'PLASMA': 0xff00ff },
-    'WEAPONS': { 'TNT': 0xff0000, 'NUKE': 0xffff00, 'C4': 0x444444, 'NITRO': 0xaa00ff },
-    'MACHINES': { 'BATTERY': 0x00ff00, 'MOTOR': 0x555555, 'WIRE': 0x333333, 'SENSOR': 0x8800ff, 'PISTON': 0xaaaaaa },
-    'SPECIAL': { 'VOID': 0x000000, 'BLACK_HOLE': 0x110022, 'CLONE': 0x00ffaa, 'ERASE': 0x000000, 'PICK': 0x00ff00, 'FILLER': 0xffffff }
+const texLoader = new THREE.TextureLoader();
+const loadTex = (url) => {
+    const t = texLoader.load(url);
+    t.magFilter = THREE.NearestFilter;
+    return t;
 };
 
-let current = 'SAND';
-const world = {}; const meshes = {}; const entities = [];
+const TEX = {
+    'SAND': loadTex('https://vignette.wikia.nocookie.net/minecraft_gamepedia/images/c/c5/Sand_JE4.png'),
+    'ROCK': loadTex('https://vignette.wikia.nocookie.net/minecraft_gamepedia/images/5/53/Stone_JE5.png'),
+    'HUMAN': loadTex('https://i.imgur.com/K8m8v2N.png'),
+    'LAVA': loadTex('https://vignette.wikia.nocookie.net/minecraft_gamepedia/images/2/2f/Lava_JE2.png'),
+    'WATER': loadTex('https://vignette.wikia.nocookie.net/minecraft_gamepedia/images/7/70/Water_JE1.png')
+};
+
 const scene = new THREE.Scene();
-const camera = new THREE.PerspectiveCamera(70, window.innerWidth/window.innerHeight, 0.1, 1000);
-const renderer = new THREE.WebGLRenderer({ antialias: false });
+const camera = new THREE.PerspectiveCamera(60, window.innerWidth/window.innerHeight, 0.1, 2000);
+const renderer = new THREE.WebGLRenderer({ antialias: true });
 renderer.setSize(window.innerWidth, window.innerHeight);
+renderer.shadowMap.enabled = true; // ACTIVAR SOMBRAS REALES
+renderer.shadowMap.type = THREE.PCFSoftShadowMap;
 document.body.appendChild(renderer.domElement);
 
-// Generar Interfaz Dinámica
-const menu = document.getElementById('menu');
-for(let cat in DB) {
-    let d = document.createElement('div'); d.className = 'category';
-    d.innerHTML = `<span class="cat-name">${cat}</span>`;
-    let g = document.createElement('div'); g.className = 'grid';
-    for(let el in DB[cat]) {
-        let b = document.createElement('button'); b.innerText = el;
-        b.onclick = () => { current = el; log(`MODO: ${el} ACTIVADO`); };
-        g.appendChild(b);
-    }
-    d.appendChild(g); menu.appendChild(d);
-}
+// Iluminación Cinematográfica
+const ambient = new THREE.AmbientLight(0x404040, 2); scene.add(ambient);
+const sun = new THREE.DirectionalLight(0xffffff, 3);
+sun.position.set(50, 100, 50);
+sun.castShadow = true;
+sun.shadow.mapSize.width = 2048; // Alta resolución de sombras
+sun.shadow.mapSize.height = 2048;
+scene.add(sun);
 
-const geo = new THREE.BoxGeometry(0.95, 0.95, 0.95);
+const world = {}; const meshes = {}; const entities = [];
+let current = 'SAND';
+const geo = new THREE.BoxGeometry(1, 1, 1);
 
 function setV(x, y, z, name) {
     const k = `${x},${y},${z}`;
     if(meshes[k]) { scene.remove(meshes[k]); delete meshes[k]; delete world[k]; }
-    if(name && name !== 'VOID' && name !== 'ERASE') {
-        const color = findColor(name);
-        const m = new THREE.Mesh(geo, new THREE.MeshBasicMaterial({color: color}));
+    if(name && name !== 'ERASE') {
+        const mat = new THREE.MeshStandardMaterial({ map: TEX[name] || TEX['ROCK'], roughness: 0.7, metalness: 0.2 });
+        if(name === 'WATER') { mat.transparent = true; mat.opacity = 0.6; }
+        const m = new THREE.Mesh(geo, mat);
         m.position.set(x, y, z);
-        scene.add(m); meshes[k] = m; world[k] = { name: name, temp: 20 };
+        m.castShadow = true;
+        m.receiveShadow = true;
+        scene.add(m); meshes[k] = m; world[k] = { name };
     }
 }
 
-function findColor(n) {
-    for(let c in DB) if(DB[c][n]) return DB[c][n];
-    return 0x555555;
-}
-
-// --- LÓGICA DE PODERES Y HERRAMIENTAS ---
-function handleAction(x, y, z) {
-    const k = `${x},${y},${z}`;
-    if (current === 'PICK' && world[k]) {
-        current = world[k].name;
-        log(`GOTERO: ${current} COPIADO`);
-    } else if (current === 'BLACK_HOLE') {
-        explode(x, y, z, 6, true);
-    } else if (current === 'FILLER') {
-        for(let ix=-3; ix<=3; ix++) for(let iz=-3; iz<=3; iz++) setV(x+ix, y, z+iz, 'ROCK');
-    } else if (current === 'HUMAN') {
-        entities.push({x:x, y:y, z:z});
-    } else {
-        setV(x, y, z, current);
-    }
-}
-
-function explode(x, y, z, r, isVoid = false) {
-    for(let ix=-r; ix<=r; ix++) for(let iy=-r; iy<=r; iy++) for(let iz=-r; iz<=r; iz++) {
-        if(Math.random() > 0.3) setV(x+ix, y+iy, z+iz, null);
-    }
-    if(!isVoid) log("ALERTA: EXPLOSIÓN DETECTADA");
-}
-
-// Loop Principal
-function update() {
-    Object.keys(world).forEach(k => {
-        const [x,y,z] = k.split(',').map(Number);
-        const name = world[k].name;
-        const abajo = `${x},${y-1},${z}`;
-
-        // Gravedad (Sand, Snow, Gravel)
-        if(['SAND', 'SNOW', 'GRAVEL', 'WATER', 'LAVA'].includes(name) && y > 1 && !world[abajo]) {
-            setV(x,y,z,null); setV(x,y-1,z,name);
-        }
-        // Infección (Virus/Cáncer)
-        if(name === 'VIRUS' || name === 'CANCER') {
-            const v = [`${x+1},${y},${z}`, `${x},${y+1},${z}`];
-            v.forEach(vec => { if(world[vec] && world[vec].name !== name && Math.random() > 0.99) setV(vec.split(',')[0], vec.split(',')[1], vec.split(',')[2], name); });
-        }
+// Interfaz Dinámica
+const menu = document.getElementById('menu');
+const cats = {'LAND':['SAND','ROCK'],'LIFE':['HUMAN'],'LIQUIDS':['WATER','LAVA'],'TOOLS':['ERASE']};
+for(let c in cats){
+    let d = document.createElement('div'); d.className='category';
+    d.innerHTML = `<span class="cat-name">${c}</span>`;
+    let g = document.createElement('div'); g.className='grid';
+    cats[c].forEach(el => {
+        let b = document.createElement('button'); b.innerText=el;
+        b.onclick=() => { current=el; log(`CARGADO: ${el}`); };
+        g.appendChild(b);
     });
-
-    // IA Humanos
-    entities.forEach(h => {
-        setV(Math.round(h.x), Math.round(h.y), Math.round(h.z), null);
-        h.x += (Math.random()-0.5)*0.2; h.z += (Math.random()-0.5)*0.2;
-        setV(Math.round(h.x), Math.round(h.y), Math.round(h.z), 'HUMAN');
-    });
+    d.appendChild(g); menu.appendChild(d);
 }
 
-window.addEventListener('mousedown', () => {
-    let rx = Math.round((Math.random()-0.5)*18), rz = Math.round((Math.random()-0.5)*18);
-    handleAction(rx, 1, rz);
+// Pintado masivo fluido
+let isDown = false;
+window.addEventListener('mousedown', () => isDown = true);
+window.addEventListener('mouseup', () => isDown = false);
+window.addEventListener('mousemove', (e) => {
+    if(isDown){
+        let x = Math.round((e.clientX/window.innerWidth - 0.5) * 40);
+        let z = Math.round((e.clientY/window.innerHeight - 0.5) * 40);
+        if(current === 'HUMAN') entities.push({x:x, y:1, z:z});
+        else setV(x, 1, z, current);
+    }
 });
 
+function update() {
+    entities.forEach(h => {
+        setV(Math.round(h.x), 1, Math.round(h.z), null);
+        h.x += (Math.random()-0.5)*0.5; h.z += (Math.random()-0.5)*0.5;
+        setV(Math.round(h.x), 1, Math.round(h.z), 'HUMAN');
+    });
+}
+
 function log(m) { const mon = document.getElementById('monitor'); mon.innerHTML = "> " + m + "<br>" + mon.innerHTML; }
-camera.position.set(20, 18, 20); camera.lookAt(0,0,0);
+camera.position.set(30, 30, 30); camera.lookAt(0,0,0);
 function loop() { update(); renderer.render(scene, camera); requestAnimationFrame(loop); }
 loop();
-
 </script>
 </body>
 </html>
