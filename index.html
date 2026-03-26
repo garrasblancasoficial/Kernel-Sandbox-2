@@ -2,24 +2,22 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <title>NEXUS: VOXEL.SYS v12.0 - UNLIMITED POWER (MIKE)</title>
+    <title>NEXUS: VOXEL.SYS v13.0 - PRECISION (MIKE)</title>
     <style>
         body { margin: 0; overflow: hidden; background: #000; font-family: 'Courier New', monospace; color: #0f0; }
-        #ui { position: absolute; top: 10px; left: 10px; background: rgba(0,20,0,0.9); padding: 15px; border: 2px solid #0f0; width: 400px; max-height: 90vh; overflow-y: auto; z-index: 100; box-shadow: 0 0 20px #0f0; }
-        .category { margin-bottom: 10px; border: 1px solid #0f0; padding: 10px; }
-        .cat-name { font-weight: bold; color: #fff; display: block; text-align: center; background: #030; margin-bottom: 10px; }
-        .grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 5px; }
-        button { background: #000; color: #0f0; border: 1px solid #0f0; padding: 8px; cursor: pointer; font-size: 10px; transition: 0.2s; }
-        button:hover { background: #0f0; color: #000; box-shadow: 0 0 10px #0f0; }
-        #monitor { margin-top: 15px; border-top: 2px solid #0f0; padding-top: 10px; height: 100px; font-size: 11px; overflow: hidden; }
+        #ui { position: absolute; top: 10px; left: 10px; background: rgba(0,10,0,0.9); padding: 12px; border: 2px solid #0f0; width: 320px; z-index: 100; pointer-events: auto; }
+        .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 5px; margin-top: 10px; }
+        button { background: #000; color: #0f0; border: 1px solid #0f0; padding: 6px; cursor: pointer; font-size: 11px; text-transform: uppercase; }
+        button:hover { background: #0f0; color: #000; }
+        #monitor { margin-top: 10px; border-top: 1px solid #0f0; padding-top: 5px; font-size: 10px; color: #0f0; }
     </style>
 </head>
 <body>
 
 <div id="ui">
-    <div style="text-align:center; font-size: 18px; font-weight: bold; text-shadow: 0 0 10px #0f0;">NEXUS_ULTRA_CORE // MIKE</div>
-    <div id="monitor">KERNEL: UNLOCKED<br>GPU_ACCELERATION: MAX</div>
-    <div id="menu"></div>
+    <div style="text-align:center; font-weight:bold; letter-spacing: 2px;">PRECISION_ENGINE // MIKE</div>
+    <div id="monitor">CURSOR: Esperando...</div>
+    <div class="grid" id="buttons"></div>
 </div>
 
 <script type="importmap">
@@ -29,96 +27,107 @@
 <script type="module">
 import * as THREE from 'three';
 
-const texLoader = new THREE.TextureLoader();
-const loadTex = (url) => {
-    const t = texLoader.load(url);
+// --- CONFIGURACIÓN DE TEXTURAS RECONOCIBLES ---
+const loader = new THREE.TextureLoader();
+const getTex = (url) => {
+    const t = loader.load(url);
     t.magFilter = THREE.NearestFilter;
+    t.minFilter = THREE.NearestFilter;
     return t;
 };
 
-const TEX = {
-    'SAND': loadTex('https://vignette.wikia.nocookie.net/minecraft_gamepedia/images/c/c5/Sand_JE4.png'),
-    'ROCK': loadTex('https://vignette.wikia.nocookie.net/minecraft_gamepedia/images/5/53/Stone_JE5.png'),
-    'HUMAN': loadTex('https://i.imgur.com/K8m8v2N.png'),
-    'LAVA': loadTex('https://vignette.wikia.nocookie.net/minecraft_gamepedia/images/2/2f/Lava_JE2.png'),
-    'WATER': loadTex('https://vignette.wikia.nocookie.net/minecraft_gamepedia/images/7/70/Water_JE1.png')
+const ASSETS = {
+    'SAND': getTex('https://i.imgur.com/K6Y7Nsh.png'), // Textura de arena granulada
+    'ROCK': getTex('https://i.imgur.com/8Nn6fM1.png'), // Piedra sólida
+    'HUMAN': getTex('https://i.imgur.com/6Xw6Q7n.png'), // Sprite de humano con cara y ropa
+    'WATER': getTex('https://i.imgur.com/Y8XvR0z.png')  // Agua pixelada
 };
 
 const scene = new THREE.Scene();
-const camera = new THREE.PerspectiveCamera(60, window.innerWidth/window.innerHeight, 0.1, 2000);
-const renderer = new THREE.WebGLRenderer({ antialias: true });
+const camera = new THREE.PerspectiveCamera(60, window.innerWidth/window.innerHeight, 0.1, 1000);
+const renderer = new THREE.WebGLRenderer({ antialias: false });
 renderer.setSize(window.innerWidth, window.innerHeight);
-renderer.shadowMap.enabled = true; // ACTIVAR SOMBRAS REALES
-renderer.shadowMap.type = THREE.PCFSoftShadowMap;
 document.body.appendChild(renderer.domElement);
 
-// Iluminación Cinematográfica
-const ambient = new THREE.AmbientLight(0x404040, 2); scene.add(ambient);
-const sun = new THREE.DirectionalLight(0xffffff, 3);
-sun.position.set(50, 100, 50);
-sun.castShadow = true;
-sun.shadow.mapSize.width = 2048; // Alta resolución de sombras
-sun.shadow.mapSize.height = 2048;
-scene.add(sun);
+// Iluminación para que todo se vea claro
+const hemi = new THREE.HemisphereLight(0xffffff, 0x444444, 2);
+scene.add(hemi);
+const dirLight = new THREE.DirectionalLight(0xffffff, 1.5);
+dirLight.position.set(10, 20, 10);
+scene.add(dirLight);
 
-const world = {}; const meshes = {}; const entities = [];
+// Plano de detección (Suelo invisible para colocar cosas donde sea)
+const groundGeo = new THREE.PlaneGeometry(100, 100);
+const groundMat = new THREE.MeshPhongMaterial({ color: 0x111111, side: THREE.DoubleSide });
+const ground = new THREE.Mesh(groundGeo, groundMat);
+ground.rotation.x = -Math.PI / 2;
+scene.add(ground);
+
+const world = {}; const meshes = {};
+const raycaster = new THREE.Raycaster();
+const mouse = new THREE.Vector2();
 let current = 'SAND';
-const geo = new THREE.BoxGeometry(1, 1, 1);
+let isDrawing = false;
 
-function setV(x, y, z, name) {
+// Generar Botones
+const btnContainer = document.getElementById('buttons');
+['SAND', 'ROCK', 'HUMAN', 'WATER', 'ERASE'].forEach(type => {
+    const b = document.createElement('button');
+    b.innerText = type;
+    b.onclick = () => { current = type; };
+    btnContainer.appendChild(b);
+});
+
+function placeElement(point) {
+    const x = Math.round(point.x);
+    const z = Math.round(point.z);
+    const y = 0.5; // Altura base
     const k = `${x},${y},${z}`;
-    if(meshes[k]) { scene.remove(meshes[k]); delete meshes[k]; delete world[k]; }
-    if(name && name !== 'ERASE') {
-        const mat = new THREE.MeshStandardMaterial({ map: TEX[name] || TEX['ROCK'], roughness: 0.7, metalness: 0.2 });
-        if(name === 'WATER') { mat.transparent = true; mat.opacity = 0.6; }
+
+    if (current === 'ERASE') {
+        if (meshes[k]) { scene.remove(meshes[k]); delete meshes[k]; delete world[k]; }
+        return;
+    }
+
+    if (!world[k]) {
+        const geo = new THREE.BoxGeometry(0.95, 0.95, 0.95);
+        const mat = new THREE.MeshStandardMaterial({ map: ASSETS[current] || ASSETS['ROCK'] });
+        if(current === 'WATER') { mat.transparent = true; mat.opacity = 0.6; }
+        
         const m = new THREE.Mesh(geo, mat);
         m.position.set(x, y, z);
-        m.castShadow = true;
-        m.receiveShadow = true;
-        scene.add(m); meshes[k] = m; world[k] = { name };
+        scene.add(m);
+        meshes[k] = m;
+        world[k] = { name: current };
     }
 }
 
-// Interfaz Dinámica
-const menu = document.getElementById('menu');
-const cats = {'LAND':['SAND','ROCK'],'LIFE':['HUMAN'],'LIQUIDS':['WATER','LAVA'],'TOOLS':['ERASE']};
-for(let c in cats){
-    let d = document.createElement('div'); d.className='category';
-    d.innerHTML = `<span class="cat-name">${c}</span>`;
-    let g = document.createElement('div'); g.className='grid';
-    cats[c].forEach(el => {
-        let b = document.createElement('button'); b.innerText=el;
-        b.onclick=() => { current=el; log(`CARGADO: ${el}`); };
-        g.appendChild(b);
-    });
-    d.appendChild(g); menu.appendChild(d);
-}
-
-// Pintado masivo fluido
-let isDown = false;
-window.addEventListener('mousedown', () => isDown = true);
-window.addEventListener('mouseup', () => isDown = false);
+// --- CONTROLES DE PRECISIÓN ---
+window.addEventListener('mousedown', (e) => { if(e.target === document.body) isDrawing = true; });
+window.addEventListener('mouseup', () => isDrawing = false);
 window.addEventListener('mousemove', (e) => {
-    if(isDown){
-        let x = Math.round((e.clientX/window.innerWidth - 0.5) * 40);
-        let z = Math.round((e.clientY/window.innerHeight - 0.5) * 40);
-        if(current === 'HUMAN') entities.push({x:x, y:1, z:z});
-        else setV(x, 1, z, current);
+    mouse.x = (e.clientX / window.innerWidth) * 2 - 1;
+    mouse.y = -(e.clientY / window.innerHeight) * 2 + 1;
+    
+    raycaster.setFromCamera(mouse, camera);
+    const intersects = raycaster.intersectObject(ground);
+    
+    if (intersects.length > 0) {
+        const p = intersects[0].point;
+        document.getElementById('monitor').innerText = `X: ${p.x.toFixed(1)} Z: ${p.z.toFixed(1)} | MODO: ${current}`;
+        if (isDrawing) placeElement(p);
     }
 });
 
-function update() {
-    entities.forEach(h => {
-        setV(Math.round(h.x), 1, Math.round(h.z), null);
-        h.x += (Math.random()-0.5)*0.5; h.z += (Math.random()-0.5)*0.5;
-        setV(Math.round(h.x), 1, Math.round(h.z), 'HUMAN');
-    });
-}
+camera.position.set(20, 20, 20);
+camera.lookAt(0, 0, 0);
 
-function log(m) { const mon = document.getElementById('monitor'); mon.innerHTML = "> " + m + "<br>" + mon.innerHTML; }
-camera.position.set(30, 30, 30); camera.lookAt(0,0,0);
-function loop() { update(); renderer.render(scene, camera); requestAnimationFrame(loop); }
-loop();
+function animate() {
+    renderer.render(scene, camera);
+    requestAnimationFrame(animate);
+}
+animate();
+
 </script>
 </body>
 </html>
